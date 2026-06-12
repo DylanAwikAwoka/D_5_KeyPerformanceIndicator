@@ -4,6 +4,7 @@ import connection.DatabaseConnection;
 import model.Karyawan;
 import model.Manager;
 import model.User;
+import util.PasswordHasher;
 import java.sql.*;
 
 /**
@@ -46,10 +47,11 @@ public class AuthDAOImpl implements IAuthDAO {
                     return null; // username tidak ditemukan
                 }
 
-                // Cocokkan password di Java. TODO(hashing): ganti baris ini
-                // dengan PasswordHasher.verify(password, storedPassword).
+                // Cocokkan password via hash. matches() menerima nilai tersimpan
+                // berupa hash maupun plaintext lama (transisi), sehingga data
+                // lama tetap bisa login sampai password di-update ulang.
                 String storedPassword = rs.getString("password");
-                if (storedPassword == null || !storedPassword.equals(password)) {
+                if (!PasswordHasher.matches(password, storedPassword)) {
                     return null; // password salah
                 }
 

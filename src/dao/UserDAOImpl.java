@@ -13,6 +13,7 @@ import connection.DatabaseConnection;
 import model.Karyawan;
 import model.Manager;
 import model.User;
+import util.PasswordHasher;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,8 @@ public class UserDAOImpl implements IUserDAO {
             // 1. Insert ke tabel induk (User)
             PreparedStatement psUser = conn.prepareStatement(queryUser, Statement.RETURN_GENERATED_KEYS);
             psUser.setString(1, user.getUsername());
-            psUser.setString(2, user.getPassword()); 
+            // Simpan password sebagai hash (disembunyikan), bukan teks asli.
+            psUser.setString(2, PasswordHasher.hashIfNeeded(user.getPassword()));
             psUser.setString(3, user.getNamaLengkap());
             psUser.setBoolean(4, user.isActive());
             psUser.setInt(5, user.getRoleId());
@@ -131,7 +133,8 @@ public class UserDAOImpl implements IUserDAO {
             // 1. Update tabel Induk
             PreparedStatement psUser = conn.prepareStatement(queryUser);
             psUser.setString(1, user.getUsername());
-            psUser.setString(2, user.getPassword());
+            // Simpan password sebagai hash (disembunyikan), bukan teks asli.
+            psUser.setString(2, PasswordHasher.hashIfNeeded(user.getPassword()));
             psUser.setString(3, user.getNamaLengkap());
             psUser.setBoolean(4, user.isActive());
             psUser.setInt(5, user.getRoleId());
