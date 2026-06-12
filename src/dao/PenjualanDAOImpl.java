@@ -66,7 +66,7 @@ public class PenjualanDAOImpl implements IPenjualanDAO {
         String query = "UPDATE penjualan SET status_validasi = ?, edited_by = ? WHERE id_penjualan = ?";
         
         try (PreparedStatement ps = conn.prepareStatement(query)) {
-            ps.setString(1, status); 
+            ps.setString(1, status);
             ps.setInt(2, managerId);
             ps.setInt(3, idPenjualan);
             ps.executeUpdate();
@@ -74,5 +74,30 @@ public class PenjualanDAOImpl implements IPenjualanDAO {
         } catch (SQLException e) {
             System.out.println("Error validasi penjualan: " + e.getMessage());
         }
+    }
+
+    @Override
+    public double getTotalPenjualanValid(int userId, int bulan, int tahun) {
+        Connection conn = DatabaseConnection.getInstance();
+        // Catatan: kolom yang benar adalah total_penjualan & status_validasi
+        // (query lama di Controller keliru memakai 'total' dan status 'Approved').
+        String query = "SELECT SUM(total_penjualan) AS omset FROM penjualan "
+                     + "WHERE user_id = ? AND MONTH(tanggal) = ? AND YEAR(tanggal) = ? "
+                     + "AND status_validasi = 'Valid'";
+
+        try (PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setInt(1, userId);
+            ps.setInt(2, bulan);
+            ps.setInt(3, tahun);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    // SUM bisa NULL bila tidak ada baris; getDouble mengembalikan 0.0.
+                    return rs.getDouble("omset");
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error hitung total penjualan: " + e.getMessage());
+        }
+        return 0.0;
     }
 }

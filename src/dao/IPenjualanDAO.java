@@ -22,4 +22,10 @@ public interface IPenjualanDAO {
     
     // Fungsi untuk Manager (Hanya mengupdate status validasi, bukan merubah nominal uang)
     void validasiPenjualan(int idPenjualan, String status, int managerId);
+
+    /**
+     * Total omzet penjualan ber-status 'Valid' milik seorang user pada
+     * bulan & tahun tertentu. Dipakai untuk kalkulasi bonus gaji.
+     */
+    double getTotalPenjualanValid(int userId, int bulan, int tahun);
 }
