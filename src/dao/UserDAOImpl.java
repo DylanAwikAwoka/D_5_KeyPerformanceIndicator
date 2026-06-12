@@ -181,4 +181,21 @@ public class UserDAOImpl implements IUserDAO {
             System.out.println("Error delete user: " + e.getMessage());
         }
     }
+
+    @Override
+    public List<Integer> getActiveUserIds() {
+        List<Integer> ids = new ArrayList<>();
+        Connection conn = DatabaseConnection.getInstance();
+        String query = "SELECT id_user FROM user WHERE is_active = true";
+
+        try (PreparedStatement ps = conn.prepareStatement(query);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                ids.add(rs.getInt("id_user"));
+            }
+        } catch (SQLException e) {
+            System.out.println("Error get active user ids: " + e.getMessage());
+        }
+        return ids;
+    }
 }

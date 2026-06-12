@@ -16,4 +16,7 @@ public interface IUserDAO {
     
     // Fungsi DELETE
     void deleteUser(int idUser);
+
+    /** Daftar id_user yang berstatus aktif (is_active = true). */
+    List<Integer> getActiveUserIds();
 }
