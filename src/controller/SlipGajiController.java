@@ -16,6 +16,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Controller untuk proses penggajian.
@@ -32,6 +33,10 @@ public class SlipGajiController {
     private static final int ATURAN_ID_UTAMA = 1;
     // TODO: idealnya gaji pokok diambil dari tabel Jabatan; untuk demo dibuat tetap.
     private static final double GAJI_POKOK_DEFAULT = 3000000.0;
+
+    // Pemisah kolom CSV. Pakai ';' agar terbaca rapi di Excel berlokal Indonesia
+    // (yang memperlakukan ',' sebagai desimal). Ubah ke "," bila perlu CSV standar.
+    private static final String CSV_SEPARATOR = ";";
 
     // Controller hanya mengenal Interface, bukan implementasi SQL-nya (Loose Coupling).
     private final ISlipGajiDAO slipDAO;
@@ -102,19 +107,44 @@ public class SlipGajiController {
 
     /**
      * Export slip gaji satu periode ke file CSV (untuk HRD).
+     * File dapat langsung dibuka di Excel. Angka diformat dengan Locale.US
+     * (desimal pakai titik) agar tidak bentrok dengan pemisah kolom.
      */
     public void exportSlipGajiToCSV(int bulan, int tahun, String filePath) {
+        // Guard: path wajib diisi.
+        if (filePath == null || filePath.trim().isEmpty()) {
+            System.err.println("Gagal export CSV: path file kosong.");
+            return;
+        }
+        // Pastikan berekstensi .csv.
+        String target = filePath.trim();
+        if (!target.toLowerCase().endsWith(".csv")) {
+            target = target + ".csv";
+        }
+
         List<SlipGaji> list = slipDAO.getSlipGajiByBulan(bulan, tahun);
 
-        try (PrintWriter writer = new PrintWriter(new File(filePath))) {
-            writer.println("ID Slip,User ID,Bulan,Tahun,Gaji Pokok,Total Bonus,Total Potongan,Kustom,Gaji Bersih,Status");
+        try (PrintWriter writer = new PrintWriter(new File(target))) {
+            // Header — pemisah konsisten lewat CSV_SEPARATOR.
+            writer.println(String.join(CSV_SEPARATOR,
+                "ID Slip", "User ID", "Bulan", "Tahun", "Gaji Pokok",
+                "Total Bonus", "Total Potongan", "Kustom", "Gaji Bersih", "Status"));
+
+            // Isi data — angka diformat Locale.US agar desimal pakai titik.
             for (SlipGaji s : list) {
-                writer.printf("%d,%d,%d,%d,%.2f,%.2f,%.2f,%.2f,%.2f,%s\n",
-                    s.getIdSlip(), s.getUserId(), s.getPeriodeBulan(), s.getPeriodeTahun(),
-                    s.getNominalGajiPokok(), s.getTotalBonus(), s.getTotalPotongan(),
-                    s.getKustomisasiGaji(), s.getGajiBersih(), s.getStatusApproval());
+                writer.println(String.join(CSV_SEPARATOR,
+                    String.valueOf(s.getIdSlip()),
+                    String.valueOf(s.getUserId()),
+                    String.valueOf(s.getPeriodeBulan()),
+                    String.valueOf(s.getPeriodeTahun()),
+                    String.format(Locale.US, "%.2f", s.getNominalGajiPokok()),
+                    String.format(Locale.US, "%.2f", s.getTotalBonus()),
+                    String.format(Locale.US, "%.2f", s.getTotalPotongan()),
+                    String.format(Locale.US, "%.2f", s.getKustomisasiGaji()),
+                    String.format(Locale.US, "%.2f", s.getGajiBersih()),
+                    s.getStatusApproval()));
             }
-            System.out.println("Export berhasil ke: " + filePath);
+            System.out.println("Export berhasil ke: " + target);
         } catch (FileNotFoundException e) {
             System.err.println("Gagal export CSV: " + e.getMessage());
         }
