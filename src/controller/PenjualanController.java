@@ -23,6 +23,10 @@ public class PenjualanController {
     // Tutup Kasir hanya boleh dilakukan SEBELUM pukul 17:00.
     private static final LocalTime BATAS_TUTUP_KASIR = LocalTime.of(17, 0);
 
+    // Status validasi yang sah dari Manager.
+    private static final String STATUS_VALID = "Valid";
+    private static final String STATUS_DITOLAK = "Ditolak";
+
     private IPenjualanDAO penjualanDAO;
 
     public PenjualanController() {
@@ -68,9 +72,15 @@ public class PenjualanController {
     }
 
     /**
-     * Method untuk Manager memvalidasi (Menerima/Menolak)
+     * Method untuk Manager memvalidasi (Menerima/Menolak).
+     * Status hanya boleh 'Valid' atau 'Ditolak'.
      */
     public void validasiPenjualanManager(int idPenjualan, String status, int managerId) {
+        // Guard clause: tolak status yang tidak sah sebelum menyentuh DAO.
+        if (!STATUS_VALID.equals(status) && !STATUS_DITOLAK.equals(status)) {
+            throw new IllegalArgumentException(
+                "GAGAL: Status hanya boleh '" + STATUS_VALID + "' atau '" + STATUS_DITOLAK + "'.");
+        }
         penjualanDAO.validasiPenjualan(idPenjualan, status, managerId);
     }
 }
