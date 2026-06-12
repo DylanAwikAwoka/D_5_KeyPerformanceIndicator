@@ -79,4 +79,27 @@ public class AturanGajiDAOImpl implements IAturanGajiDAO {
             System.out.println("Error delete aturan gaji: " + e.getMessage());
         }
     }
+
+    @Override
+    public AturanGaji getAturanById(int aturanId) {
+        Connection conn = DatabaseConnection.getInstance();
+        String query = "SELECT * FROM aturan_gaji WHERE aturan_id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(query)) {
+            ps.setInt(1, aturanId);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new AturanGaji(
+                        rs.getInt("aturan_id"),
+                        rs.getString("nama_aturan"),
+                        rs.getDouble("persentase_bonus"),
+                        rs.getDouble("potongan_wajib")
+                    );
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error get aturan by id: " + e.getMessage());
+        }
+        return null;
+    }
 }
