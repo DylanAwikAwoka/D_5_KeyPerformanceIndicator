@@ -11,13 +11,18 @@ package controller;
 
 import dao.IPenjualanDAO;
 import dao.PenjualanDAOImpl;
+import exception.BatasWaktuException;
 import exception.InputKosongException;
 import java.sql.Date;
+import java.time.LocalTime;
 import java.util.List;
 import model.Penjualan;
 
 public class PenjualanController {
-    
+
+    // Tutup Kasir hanya boleh dilakukan SEBELUM pukul 17:00.
+    private static final LocalTime BATAS_TUTUP_KASIR = LocalTime.of(17, 0);
+
     private IPenjualanDAO penjualanDAO;
 
     public PenjualanController() {
@@ -25,24 +30,32 @@ public class PenjualanController {
     }
 
     /**
-     * Method untuk Kasir menginput penjualan harian
-     * Throws 2 jenis Exception sekaligus sesuai syarat rubrik dosen!
+     * Method untuk Kasir menginput penjualan harian (Tutup Kasir).
+     * Throws 3 jenis Exception: batas waktu, input kosong, dan parsing angka.
      */
-    public void submitPenjualan(int userId, String tanggalStr, String totalPenjualanStr) 
-            throws InputKosongException, NumberFormatException {
-        
-        // 1. Validasi Input Kosong (User Defined Exception)
+    public void submitPenjualan(int userId, String tanggalStr, String totalPenjualanStr)
+            throws BatasWaktuException, InputKosongException, NumberFormatException {
+
+        // 1. Validasi Batas Waktu: Tutup Kasir wajib sebelum 17:00.
+        //    Diletakkan paling awal agar transaksi lewat batas langsung gagal.
+        if (!LocalTime.now().isBefore(BATAS_TUTUP_KASIR)) {
+            throw new BatasWaktuException(
+                "GAGAL: Tutup Kasir hanya bisa dilakukan sebelum pukul "
+                + BATAS_TUTUP_KASIR + ".");
+        }
+
+        // 2. Validasi Input Kosong (User Defined Exception)
         if (tanggalStr == null || tanggalStr.trim().isEmpty() ||
             totalPenjualanStr == null || totalPenjualanStr.trim().isEmpty()) {
             throw new InputKosongException("GAGAL: Tanggal dan Total Penjualan wajib diisi!");
         }
 
-        // 2. Parsing Tipe Data (Memancing Default Exception)
+        // 3. Parsing Tipe Data (Memancing Default Exception)
         // Jika kasir menginput "Seratus Ribu" di kolom uang, ini otomatis melempar NumberFormatException
         double total = Double.parseDouble(totalPenjualanStr);
         Date tanggal = Date.valueOf(tanggalStr); // Format wajib YYYY-MM-DD
 
-        // 3. Eksekusi simpan ke DAO
+        // 4. Eksekusi simpan ke DAO
         Penjualan p = new Penjualan(0, userId, tanggal, total, "Pending", 0);
         penjualanDAO.insertPenjualan(p);
     }
